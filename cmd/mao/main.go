@@ -26,6 +26,22 @@ func run(arguments []string) error {
 	if len(arguments) == 0 {
 		return usageError()
 	}
+
+	// Parse --pure flag
+	pure := false
+	filtered := arguments[:0]
+	for _, arg := range arguments {
+		if arg == "--pure" {
+			pure = true
+		} else {
+			filtered = append(filtered, arg)
+		}
+	}
+	arguments = filtered
+
+	if len(arguments) == 0 {
+		return usageError()
+	}
 	command, targets := arguments[0], arguments[1:]
 	switch command {
 	case "emit-go":
@@ -42,12 +58,12 @@ func run(arguments []string) error {
 		if len(targets) == 0 {
 			targets = []string{"."}
 		}
-		return invokePackageCommand(command, targets)
+		return invokePackageCommand(command, targets, pure)
 	case "run":
 		if len(targets) != 1 {
 			return errors.New("run requires one .mao file or package directory")
 		}
-		return invokePackageCommand(command, targets)
+		return invokePackageCommand(command, targets, pure)
 	default:
 		return fmt.Errorf("unknown command %q\n%s", command, usageText())
 	}
@@ -59,11 +75,11 @@ func usageError() error {
 
 func usageText() string {
 	return `usage:
-  mao build [packages]
-  mao run <file-or-package>
-  mao test [packages]
+  mao build [--pure] [packages]
+  mao run [--pure] <file-or-package>
+  mao test [--pure] [packages]
   mao fmt [files-or-directories]
-  mao check [packages]
+  mao check [--pure] [packages]
   mao emit-go <files>`
 }
 
@@ -145,7 +161,7 @@ func normalizeWhitespace(source []byte) []byte {
 	return append(bytes.Join(lines, []byte("\n")), '\n')
 }
 
-func invokePackageCommand(command string, targets []string) error {
+func invokePackageCommand(command string, targets []string, pure bool) error {
 	root, err := findModuleRoot(targets[0])
 	if err != nil {
 		return err

@@ -154,7 +154,7 @@ func TestCompileTypesAndPackageDeclarations(t *testing.T) {
 		"}\n\n" +
 		"type Count = int64\n" +
 		"const DefaultAge = 3\n" +
-		"table<string, int> Ages\n")
+		"table[string, int] Ages\n")
 	generated, err := Compile("model.mao", source)
 	if err != nil {
 		t.Fatal(err)
@@ -178,12 +178,12 @@ func TestCompileTypesAndPackageDeclarations(t *testing.T) {
 func TestCompileGenericDefinitionsAndCalls(t *testing.T) {
 	source := []byte(`package main
 
-func identity<T any>(T value) T {
+func identity[T any](T value) T {
 	return value
 }
 
 func main() {
-	int explicit = identity<int>(3)
+	int explicit = identity[int](3)
 	int inferred = identity(4)
 }
 `)
@@ -332,7 +332,7 @@ func main() {
 }
 
 func TestRejectStaticallyIncomparableTableKey(t *testing.T) {
-	source := []byte("package main\nfunc main() { table<int[], int> values = [] }\n")
+	source := []byte("package main\nfunc main() { table[int[], int] values = [] }\n")
 	_, err := Compile("keys.mao", source)
 	if err == nil || !strings.Contains(err.Error(), "table key type int[] is not comparable") {
 		t.Fatalf("expected incomparable key diagnostic, got %v", err)
@@ -376,7 +376,7 @@ func total(int... values) int {
 }
 
 func main() {
-	chan<int> events = make(chan<int>, 1)
+	chan[int] events = make(chan[int], 1)
 	events <- 7
 	value := <-events
 	_ = func(int item) int { return item + value }(3)
@@ -435,7 +435,7 @@ func TestNativeMapTypeParsing(t *testing.T) {
 func TestRejectGoMapTypeSyntaxWithMigrationHint(t *testing.T) {
 	source := []byte("package main\nfunc main() { map[string]int values }\n")
 	_, err := Compile("go-map.mao", source)
-	if err == nil || !strings.Contains(err.Error(), "use the Mao front type K:V[]") {
+	if err == nil || !strings.Contains(err.Error(), "type syntax K:V[] should be used for Go native maps") {
 		t.Fatalf("expected native map syntax hint, got %v", err)
 	}
 }
@@ -464,7 +464,7 @@ func TestImportedGenericAPI(t *testing.T) {
 import "slices"
 func main() {
 	int[] source = int[]{1, 2}
-	int[] cloned = slices.Clone<int>(source)
+	int[] cloned = slices.Clone[int](source)
 	_ = cloned
 }
 `)
@@ -482,9 +482,9 @@ func TestExplicitTableTargetRejectsIncompatibleItems(t *testing.T) {
 		name   string
 		source string
 	}{
-		{"key", `table<int, int> values = ["cat": 1]`},
-		{"value", `table<string, int> values = ["cat": "old"]`},
-		{"null", `table<string, int> values = ["cat": null]`},
+		{"key", `table[int, int] values = ["cat": 1]`},
+		{"value", `table[string, int] values = ["cat": "old"]`},
+		{"null", `table[string, int] values = ["cat": null]`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -527,7 +527,7 @@ func main() {
 		int copy = candidate
 		_ = copy
 	}
-	chan<int32> events = make(chan<int32>, 1)
+	chan[int32] events = make(chan[int32], 1)
 	select {
 	case received := <-events:
 		int64 widened = received
@@ -633,7 +633,7 @@ func main() {
 	int[] values = null
 	int:string[] settings = null
 	*int pointer = null
-	chan<int> events = null
+	chan[int] events = null
 	func() callback = null
 	if values == null {}
 }

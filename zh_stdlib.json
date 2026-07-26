@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0-dev",
+  "goVersion": "1.26",
+  "packages": {
+    "范":               { "go": "fmt",            "name": "范" },
+    "系统":             { "go": "os",             "name": "系统" },
+    "出入":             { "go": "io",             "name": "出入" },
+    "缓冲输入输出":     { "go": "bufio",          "name": "缓冲输入输出" },
+    "文具":             { "go": "strings",        "name": "文具" },
+    "字节":             { "go": "bytes",          "name": "字节工具" },
+    "文译":             { "go": "strconv",        "name": "文译" },
+    "时":               { "go": "time",           "name": "时" },
+    "数":               { "go": "math",           "name": "数" },
+    "数/随机":          { "go": "math/rand/v2",   "name": "随机" },
+    "同":               { "go": "sync",           "name": "同" },
+    "境":               { "go": "context",        "name": "境" },
+    "误具":             { "go": "errors",         "name": "误具" },
+    "志":               { "go": "log",            "name": "志" },
+    "日志/系统日志":    { "go": "log/slog",       "name": "系统日志" },
+    "正则":             { "go": "regexp",         "name": "正则" },
+    "排":               { "go": "sort",           "name": "排" },
+    "切具":             { "go": "slices",         "name": "切具" },
+    "图具":             { "go": "maps",           "name": "图具" },
+    "径":               { "go": "path",           "name": "径" },
+    "径/档径":          { "go": "path/filepath",  "name": "档径" },
+    "数据库/SQL":       { "go": "database/sql",   "name": "数据库" },
+    "编码/JSON":        { "go": "encoding/json",  "name": "JSON" },
+    "网":               { "go": "net",            "name": "网" },
+    "网/超文本":        { "go": "net/http",       "name": "超文本" },
+    "测试":             { "go": "testing",        "name": "测试" }
+  },
+  "reservedWords": {
+    "止": "break", "本": "default", "方": "func", "接": "interface",
+    "择": "select", "例": "case", "延": "defer", "去": "go",
+    "图": "map", "构": "struct", "槽": "chan", "另": "else",
+    "转": "goto", "包": "package", "选": "switch", "恒": "const",
+    "贯": "fallthrough", "若": "if", "遍": "range", "类": "type",
+    "续": "continue", "为": "for", "舶": "import", "返": "return",
+    "变": "var"
+  },
+  "predeclared": {
+    "空": "null", "真": "true", "假": "false", "序": "iota",
+    "微": "float", "表": "table", "凡": "any",
+    "阴阳": "bool", "文": "string", "字节": "byte", "字": "rune",
+    "可比": "comparable", "误": "error",
+    "整": "int", "整8": "int8", "整16": "int16", "整32": "int32", "整64": "int64",
+    "无符整": "uint", "无符整8": "uint8", "无符整16": "uint16",
+    "无符整32": "uint32", "无符整64": "uint64", "指针整数": "uintptr",
+    "微32": "float32", "微64": "float64",
+    "复64": "complex64", "复128": "complex128",
+    "补": "append", "容": "cap", "清": "clear", "闭": "close",
+    "抄": "copy", "删": "delete", "虚": "imag", "长": "len",
+    "制": "make", "最大": "max", "最小": "min", "新": "new",
+    "恐": "panic", "印": "print", "印行": "println", "实": "real",
+    "重": "recover"
+  },
+  "tableOperations": {
+    "取": "get", "有": "has", "于": "at",
+    "键全": "keys", "值全": "values",
+    "删": "Delete", "删于": "DeleteAt", "清": "clear"
+  }
+}

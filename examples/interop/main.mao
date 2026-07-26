@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func sum(table<int, int> values) int {
+func sum(table[int, int] values) int {
 	total := 0
 	for _, value := range values {
 		total = total + value
@@ -16,7 +16,7 @@ func main() {
 	roundTrip := table(nativeValues)
 
 	settings := ["width": 800, "height": 600]
-	string:int[] nativeSettings = map(settings)
+	string:int[] nativeSettings = toGoMap(settings)
 	settingsAgain := table(nativeSettings)
 
 	missing := values[99]
@@ -24,17 +24,17 @@ func main() {
 		fmt.Println(sum(roundTrip), settingsAgain.get("width", 0))
 	}
 
-	table<int, int32> small = [1, 2]
+	table[int, int32] small = [1, 2]
 	int64[] widened = small
 	int64[2] fixed = small
-	int:int64[] widenedMap = map(small)
+	int:int64[] widenedMap = toGoMap(small)
 	fmt.Println(widened, fixed, widenedMap[0])
 
 	nullable := ["empty": null, "zero": 0]
 	any[] preserved = nullable.values()
 	int[] filled = nullable.values(9)
-	string:any[] preservedMap = map(nullable)
-	string:int[] filledMap = map(nullable, 9)
+	string:any[] preservedMap = toGoMap(nullable)
+	string:int[] filledMap = toGoMap(nullable, 9)
 	fmt.Println(preserved, filled, preservedMap["empty"], filledMap["empty"])
 
 	calls := 0

@@ -748,7 +748,7 @@ func (parser *parser) parseFunction() (function, error) {
 }
 
 func (parser *parser) parseTypeParameters() ([]field, error) {
-	if !parser.match('<') {
+	if !parser.match('[') {
 		return nil, nil
 	}
 	var result []field
@@ -762,7 +762,7 @@ func (parser *parser) parseTypeParameters() ([]field, error) {
 			return nil, err
 		}
 		result = append(result, field{name: name, typ: constraint})
-		if parser.match('>') {
+		if parser.match(']') {
 			return result, nil
 		}
 		if err := parser.expect(','); err != nil {
@@ -1341,7 +1341,7 @@ func (parser *parser) tryVariableDeclaration() (statement, bool, error) {
 	if parser.current().kind == scanner.Ident && parser.current().text == "map" &&
 		parser.peek(1).kind == '[' {
 		return nil, true, parser.errorf(
-			"Go map[K]V type syntax is not supported; use the Mao front type K:V[]",
+			"type syntax K:V[] should be used for Go native maps",
 		)
 	}
 	if !parser.typeCanStart() {
@@ -1415,7 +1415,7 @@ func (parser *parser) parseType() (maoType, error) {
 	}
 	var result maoType
 	if name == "table" {
-		if err := parser.expect('<'); err != nil {
+		if err := parser.expect('['); err != nil {
 			return maoType{}, err
 		}
 		key, err := parser.parseType()
@@ -1429,7 +1429,7 @@ func (parser *parser) parseType() (maoType, error) {
 		if err != nil {
 			return maoType{}, err
 		}
-		if err := parser.expect('>'); err != nil {
+		if err := parser.expect(']'); err != nil {
 			return maoType{}, err
 		}
 		result = tableType(key, value)
@@ -1518,10 +1518,10 @@ func (parser *parser) parseType() (maoType, error) {
 			direction = "send"
 		}
 		var element maoType
-		if parser.match('<') {
+		if parser.match('[') {
 			element, err = parser.parseType()
 			if err == nil {
-				err = parser.expect('>')
+				err = parser.expect(']')
 			}
 		} else {
 			element, err = parser.parseType()
@@ -1536,14 +1536,14 @@ func (parser *parser) parseType() (maoType, error) {
 		} else {
 			result = maoType{kind: "named", name: name}
 		}
-		if parser.match('<') {
+		if !isBasicType(name) && parser.match('[') {
 			for {
 				argument, err := parser.parseType()
 				if err != nil {
 					return maoType{}, err
 				}
 				result.args = append(result.args, argument)
-				if parser.match('>') {
+				if parser.match(']') {
 					break
 				}
 				if err := parser.expect(','); err != nil {
@@ -1783,7 +1783,7 @@ func (parser *parser) parseUnaryExpression() (expression, error) {
 				return nil, err
 			}
 			value = indexExpression{receiver: value, key: first}
-		case parser.current().kind == '<':
+		case parser.current().kind == '[':
 			start := parser.index
 			parser.index++
 			var arguments []maoType
@@ -1794,7 +1794,7 @@ func (parser *parser) parseUnaryExpression() (expression, error) {
 					break
 				}
 				arguments = append(arguments, argument)
-				if parser.match('>') {
+				if parser.match(']') {
 					if parser.current().kind == '(' || parser.current().kind == '.' {
 						value = genericExpression{base: value, arguments: arguments}
 					} else {
@@ -1936,7 +1936,7 @@ func (parser *parser) parsePrimary() (expression, error) {
 	case scanner.Ident:
 		if (isBasicType(current.text) &&
 			(parser.peek(1).kind == '[' || parser.peek(1).kind == '?' || parser.peek(1).kind == ':')) ||
-			(current.text == "table" && parser.peek(1).kind == '<') {
+			(current.text == "table" && parser.peek(1).kind == '[') {
 			typ, err := parser.parseType()
 			if err != nil {
 				return nil, err
@@ -2922,7 +2922,7 @@ func (emitter *emitter) emitValue(source expression, expected maoType) (ast.Expr
 		case "map":
 			if resolvedActual.value.kind == "optional" {
 				return nil, maoType{}, fmt.Errorf(
-					"%s: converting nullable table to %s requires map(tableValue, defaultValue)",
+					"%s: converting nullable table to %s requires toGoMap(tableValue, defaultValue)",
 					emitter.filename, typeName(resolvedExpected),
 				)
 			}
@@ -3417,7 +3417,7 @@ func (emitter *emitter) emitExpression(source expression, expected *maoType) (as
 		if name, ok := expression.function.(identifier); ok && name.name == "table" {
 			return emitter.emitTableConversion(expression.arguments)
 		}
-		if name, ok := expression.function.(identifier); ok && name.name == "map" {
+		if name, ok := expression.function.(identifier); ok && name.name == "toGoMap" {
 			return emitter.emitMapConversion(expression.arguments, expected)
 		}
 		if name, ok := expression.function.(identifier); ok && name.name == "len" && len(expression.arguments) == 1 {
@@ -3839,6 +3839,12 @@ func (emitter *emitter) emitTable(source tableLiteral, expected *maoType) (ast.E
 		keyType = *expected.key
 		valueType = *expected.value
 	}
+	if isFloatKey(keyType) {
+		return nil, maoType{}, fmt.Errorf(
+			"%s: float types (%s) cannot be used as table keys (NaN violates reflexivity); use string formatting or wrap in a struct",
+			emitter.filename, typeName(keyType),
+		)
+	}
 	if !staticallyComparable(keyType) {
 		return nil, maoType{}, fmt.Errorf(
 			"%s: table key type %s is not comparable", emitter.filename, typeName(keyType),
@@ -3891,6 +3897,17 @@ func (emitter *emitter) emitTable(source tableLiteral, expected *maoType) (ast.E
 		Body: body,
 	}
 	return &ast.CallExpr{Fun: function}, resultType, nil
+}
+
+func isFloatKey(typ maoType) bool {
+	switch typ.kind {
+	case "basic":
+		return typ.name == "float" || typ.name == "float32" || typ.name == "float64"
+	case "named":
+		return false
+	default:
+		return false
+	}
 }
 
 func staticallyComparable(typ maoType) bool {
@@ -4287,7 +4304,7 @@ func (emitter *emitter) inferExpression(source expression) maoType {
 				return tableType(*sourceType.key, *sourceType.value)
 			}
 		}
-		if name, ok := expression.function.(identifier); ok && name.name == "map" &&
+		if name, ok := expression.function.(identifier); ok && name.name == "toGoMap" &&
 			len(expression.arguments) >= 1 {
 			sourceType := emitter.inferExpression(expression.arguments[0])
 			if sourceType.kind == "table" {
